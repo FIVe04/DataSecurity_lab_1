@@ -130,12 +130,38 @@ class UserMainFrame(ctk.CTkFrame):
         self.logout_button = ctk.CTkButton(self, text="Logout", command=logout)
         self.logout_button.pack(pady=30)
 
+        self.about_button = ctk.CTkButton(self, text="About", command=self.open_about_dialog)
+        self.about_button.pack(pady=5)
+
         self.dialog = None
         self.change_password_callback = change_password_callback
+
+    def open_about_dialog(self):
+        AboutDialog(self)
 
     def open_change_password(self):
         self.dialog = ChangePasswordDialog(self, self.change_password_callback)
 
+class AboutDialog(ctk.CTkToplevel):
+    def __init__(self, master=None, **kwargs):
+        super().__init__(master, **kwargs)
+
+        self.title("О программе")
+        self.geometry("300x200")
+        self.resizable(False, False)
+
+        # Делаем окно модальным
+        self.grab_set()
+
+        label = ctk.CTkLabel(
+            self,
+            text="Выполнил:\nФролов Иван\nСтудент группы А-05-22\nПрограмма: Лабораторная 1",
+            justify="center"
+        )
+        label.pack(pady=20, padx=10)
+
+        close_button = ctk.CTkButton(self, text="Закрыть", command=self.destroy)
+        close_button.pack(pady=10)
 
 class AdminMainFrame(ctk.CTkFrame):
     def __init__(self, master, logout, change_password, **kwargs):
@@ -153,8 +179,12 @@ class AdminMainFrame(ctk.CTkFrame):
         self.manage_users_button = ctk.CTkButton(self, text="User management", command=self.open_users_dialog)
         self.manage_users_button.pack(pady=5)
 
+
         self.logout_button = ctk.CTkButton(self, text="Logout", command=logout)
         self.logout_button.pack(pady=5)
+
+        self.about_button = ctk.CTkButton(self, text="About", command=self.open_about_dialog)
+        self.about_button.pack(pady=5)
 
         self.users = []
 
@@ -164,6 +194,9 @@ class AdminMainFrame(ctk.CTkFrame):
         self.dialog = None
 
         self.change_password_callback = change_password
+
+    def open_about_dialog(self):
+        AboutDialog(self)
 
     def open_change_password(self):
         self.dialog = ChangePasswordDialog(self, self.change_password_callback)

@@ -5,3 +5,7 @@ dist/
 build/
 main.spec
 .env
+app/build/
+app/dist/
+app/main.spec
+

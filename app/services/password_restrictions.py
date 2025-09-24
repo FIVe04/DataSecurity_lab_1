@@ -5,7 +5,7 @@ def check_password(password: str) -> str | None:
     checks = {
         "latin letters": r"[A-Za-z]",
         "cyrillic letters": r"[А-Яа-яЁё]",
-        "arithmetic operators (+-*/)": r"[+\-*/]"
+        "arithmetic operators (+-*/)": r"[+\-*/%]"
     }
 
     for name, pattern in checks.items():

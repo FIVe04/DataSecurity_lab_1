@@ -20,14 +20,15 @@ class UserState:
         self.is_logged_in = False
         self.is_admin = False
         self.username = None
+        self.login_attempts = 0
 
     def change_password(self, old_password, new_password):
-        new_password_hash = get_password_hash(new_password)
+        new_password_hash = get_password_hash(self.username, new_password)
         try:
             with get_db() as db:
                 old_user = get_user_by_id(db, self.id)
                 print(old_user, self.id)
-                if verify_password(old_password, old_user.hashed_password):
+                if verify_password(old_user.username, old_password, old_user.hashed_password):
                     if old_user.password_restrictions_enabled:
                         error_password = check_password(new_password)
                         if error_password:
@@ -38,17 +39,16 @@ class UserState:
         except Exception as e:
             return {'message': str(e), 'detail': e}
 
-
     def login(self, username, password):
         self.is_logged_in = False
         try:
             with get_db() as db:
                 user = get_user_by_username(db, username)
-                self.login_attempts += 1
+
                 if user:
                     if user.hashed_password == "":
                         return {'message': "You should register first!", 'data': {'user_id': user.id}}
-                    if verify_password(password, user.hashed_password):
+                    if verify_password(user.username, password, user.hashed_password):
                         if user.is_locked:
                             return {'message': 'User is locked', 'data': None}
                         self.is_logged_in = True
@@ -57,11 +57,15 @@ class UserState:
                         self.id = user.id
                         self.login_attempts = 0
                         return {'message': 'OK', 'data': {'user_id': user.id}}
-                    if self.login_attempts == settings.LOGIN_ATTEMPTS:
+                    self.login_attempts += 1
+                    if self.login_attempts >= settings.LOGIN_ATTEMPTS:
                         return {'message': 'You have exceeded maximum login attempts', 'data': None}
-
                     return {'message': 'Wrong username or password', 'data': None}
-                return {'message': 'Wrong username or password', 'data': None}
+                else:
+                    self.login_attempts += 1
+                    if self.login_attempts >= settings.LOGIN_ATTEMPTS:
+                        return {'message': 'You have exceeded maximum login attempts', 'data': None}
+                    return {'message': 'Wrong username or password', 'data': None}
         except Exception as e:
             return {'message': str(e), 'data': {'error': e}}
 
@@ -79,7 +83,7 @@ class UserState:
                             if response_password_check:
                                 return {'message': response_password_check, 'data': None}
 
-                        new_user = User(username=username, hashed_password=get_password_hash(password),
+                        new_user = User(username=username, hashed_password=get_password_hash(user.username, password),
                                         role=user.role, is_locked=False, password_restrictions_enabled=False)
                         ref_user = register_user(db, new_user)
                         self.is_admin = ref_user.role == 'admin'

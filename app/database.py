@@ -22,7 +22,7 @@ def get_db():
 
 def init_db():
     from app.models.user import User
-
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 

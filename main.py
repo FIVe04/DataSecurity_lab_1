@@ -9,17 +9,26 @@ from app.services.crypto import verify_password, get_password_hash
 from app.state_manager.user import UserState
 
 
+def _no_spaces_callback(new_value):
+    if " " in new_value:
+        return False
+    return True
+
 class LoginFrame(ctk.CTkFrame):
     def __init__(self, master, switch_to_main, switch_to_register, **kwargs):
         super().__init__(master, **kwargs)
 
+        self.validate_no_spaces = self.register(_no_spaces_callback)
+
         self.label = ctk.CTkLabel(self, text="Login Page")
         self.label.pack(pady=10)
 
-        self.username_entry = ctk.CTkEntry(self, placeholder_text="Username")
+        self.username_entry = ctk.CTkEntry(self, placeholder_text="Username",
+                                           validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.username_entry.pack(pady=10)
 
-        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password", show="*")
+        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password", show="*",
+                                           validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.password_entry.pack(pady=10)
 
         self.label_info = ctk.CTkLabel(self, text="")
@@ -41,13 +50,18 @@ class RegisterFrame(ctk.CTkFrame):
         self.label = ctk.CTkLabel(self, text="Sign Up Page")
         self.label.pack(pady=10)
 
-        self.username_entry = ctk.CTkEntry(self, placeholder_text="Username")
+        self.validate_no_spaces = self.register(_no_spaces_callback)
+
+        self.username_entry = ctk.CTkEntry(self, placeholder_text="Username",
+                                           validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.username_entry.pack(pady=10)
 
-        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password", show="*")
+        self.password_entry = ctk.CTkEntry(self, placeholder_text="Password", show="*",
+                                           validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.password_entry.pack(pady=10)
 
-        self.password_repeat_entry = ctk.CTkEntry(self, placeholder_text="Repeat password", show="*")
+        self.password_repeat_entry = ctk.CTkEntry(self, placeholder_text="Repeat_password", show="*",
+                                                  validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.password_repeat_entry.pack(pady=10)
 
         self.label_info = ctk.CTkLabel(self, text="")
@@ -77,13 +91,18 @@ class ChangePasswordDialog(ctk.CTkToplevel):
         self.label = ctk.CTkLabel(self, text="Change password", font=ctk.CTkFont(size=14, weight="bold"))
         self.label.pack(pady=(20, 5))
 
-        self.old_password = ctk.CTkEntry(self, placeholder_text="Enter old password", show="*")
+        self.validate_no_spaces = self.register(_no_spaces_callback)
+
+        self.old_password = ctk.CTkEntry(self, placeholder_text="Enter_old_password", show="*",
+                                         validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.old_password.pack(pady=5)
 
-        self.new_password = ctk.CTkEntry(self, placeholder_text="Enter new password", show="*")
+        self.new_password = ctk.CTkEntry(self, placeholder_text="Enter_new_password", show="*",
+                                         validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.new_password.pack(pady=5)
 
-        self.new_password_repeat = ctk.CTkEntry(self, placeholder_text="Repeat new password", show="*")
+        self.new_password_repeat = ctk.CTkEntry(self, placeholder_text="Repeat_new_password", show="*",
+                                                validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         self.new_password_repeat.pack(pady=5)
 
         self.label_info = ctk.CTkLabel(self, text="")
@@ -284,7 +303,10 @@ class AdminMainFrame(ctk.CTkFrame):
         lbl_name = ctk.CTkLabel(add_window, text="Username: ")
         lbl_name.pack(pady=(15, 5))
 
-        entry_name = ctk.CTkEntry(add_window, width=250)
+        self.validate_no_spaces = self.register(_no_spaces_callback)
+
+        entry_name = ctk.CTkEntry(add_window, width=250, placeholder_text="Username",
+                                  validate="key", validatecommand=(self.validate_no_spaces, "%P"))
         entry_name.pack(pady=5)
 
         chk_block_var = ctk.BooleanVar()

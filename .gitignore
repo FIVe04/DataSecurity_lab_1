@@ -10,4 +10,5 @@ app/dist/
 app/main.spec
 main.exe
 main.exe.zip
+users.db.enc
 

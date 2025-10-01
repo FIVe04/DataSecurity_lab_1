@@ -8,6 +8,9 @@ from app.models.user import User
 from app.services.crypto import verify_password, get_password_hash
 from app.state_manager.user import UserState
 
+if getattr(sys, 'frozen', False):
+    sys.stdout = open(os.devnull, 'w')
+    sys.stderr = open(os.devnull, 'w')
 
 def _no_spaces_callback(new_value):
     if " " in new_value:
@@ -512,7 +515,7 @@ if __name__ == "__main__":
         from app.database import init_encrypted_db
         init_encrypted_db(passphrase)
     except Exception as e:
-        mb.showerror("Ошибка", str(e))
+        mb.showerror("Ошибка", 'Неверная парольная фраза!')
         sys.exit()
 
     userState = UserState()

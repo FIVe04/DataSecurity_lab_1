@@ -3,7 +3,7 @@ import sys
 import customtkinter as ctk
 
 from app.crud.user import get_user_by_username, add_user, get_all_users, block_user, restrict_password_user, add_admin
-from app.database import get_db, init_db
+from app.database import get_db
 from app.models.user import User
 from app.services.crypto import verify_password, get_password_hash
 from app.state_manager.user import UserState
@@ -350,8 +350,6 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        init_db()
-
         try:
             with get_db() as db:
                 add_admin(db)
@@ -497,8 +495,35 @@ class App(ctk.CTk):
 
 
 if __name__ == "__main__":
+    import tkinter.simpledialog as sd
+    import tkinter.messagebox as mb
+
     ctk.set_appearance_mode("dark")
     ctk.set_default_color_theme("blue")
+
+    root = ctk.CTk()
+    root.withdraw()
+    passphrase = sd.askstring("Парольная фраза", "Введите пароль:", show="*")
+    if not passphrase:
+        mb.showerror("Ошибка", "Пароль не введён!")
+        sys.exit()
+
+    try:
+        from app.database import init_encrypted_db
+        init_encrypted_db(passphrase)
+    except Exception as e:
+        mb.showerror("Ошибка", str(e))
+        sys.exit()
+
     userState = UserState()
     app = App()
+
+    def on_close():
+        from app.database import save_encrypted_db
+        save_encrypted_db(passphrase)
+        app.destroy()
+        sys.exit()
+
+    app.protocol("WM_DELETE_WINDOW", on_close)
     app.mainloop()
+

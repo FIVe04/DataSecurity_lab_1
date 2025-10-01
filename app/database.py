@@ -1,4 +1,6 @@
 import sqlite3
+import tempfile
+
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -28,18 +30,20 @@ def init_encrypted_db(password: str):
         except Exception:
             raise Exception("Неверная парольная фраза!")
 
-        disk_conn = sqlite3.connect("tmp.db")
-        with open("tmp.db", "wb") as f:
-            f.write(db_bytes)
-        disk_conn = sqlite3.connect("tmp.db")
-        _mem_conn = sqlite3.connect(":memory:")
-        disk_conn.backup(_mem_conn)
-        disk_conn.close()
-        os.remove("tmp.db")
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+            tmp_name = tmp.name
+            tmp.write(db_bytes)
+
+        try:
+            disk_conn = sqlite3.connect(tmp_name)
+            _mem_conn = sqlite3.connect(":memory:")
+            disk_conn.backup(_mem_conn)
+        finally:
+            disk_conn.close()
+            os.remove(tmp_name)
 
     else:
         _mem_conn = sqlite3.connect(":memory:")
-
 
     _engine = create_engine("sqlite:///:memory:", creator=lambda: _mem_conn)
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=_engine)
@@ -53,18 +57,25 @@ def save_encrypted_db(password: str):
     salt = b"my_salt"
     key = derive_key(password, salt)
 
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".db") as tmp:
+        tmp_name = tmp.name
 
-    disk_conn = sqlite3.connect("tmp.db")
-    _mem_conn.backup(disk_conn)
-    disk_conn.close()
+    try:
+        disk_conn = sqlite3.connect(tmp_name)
+        _mem_conn.backup(disk_conn)
+        disk_conn.close()
 
-    with open("tmp.db", "rb") as f:
-        db_bytes = f.read()
-    os.remove("tmp.db")
+        with open(tmp_name, "rb") as f:
+            db_bytes = f.read()
 
-    enc_data = encrypt_aes_cfb(key, db_bytes)
-    with open("users.db.enc", "wb") as f:
-        f.write(enc_data)
+        enc_data = encrypt_aes_cfb(key, db_bytes)
+
+        with open("users.db.enc", "wb") as f:
+            f.write(enc_data)
+
+    finally:
+        if os.path.exists(tmp_name):
+            os.remove(tmp_name)
 
 
 @contextmanager

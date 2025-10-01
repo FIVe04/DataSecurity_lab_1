@@ -174,7 +174,7 @@ class AboutDialog(ctk.CTkToplevel):
 
         label = ctk.CTkLabel(
             self,
-            text="Выполнил:\nФролов Иван\nСтудент группы А-05-22\nПрограмма: Лабораторная 1",
+            text="Выполнил:\nФролов Иван\nСтудент группы А-05-22\nПрограмма: Лабораторная 4",
             justify="center"
         )
         label.pack(pady=20, padx=10)

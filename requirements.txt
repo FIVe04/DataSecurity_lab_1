@@ -16,3 +16,4 @@ python-dotenv==1.1.1
 SQLAlchemy==2.0.43
 typing-inspection==0.4.1
 typing_extensions==4.15.0
+pycryptodome==3.20.0

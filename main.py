@@ -1,4 +1,7 @@
+import os
 import sys
+import winreg
+from pathlib import Path
 
 import customtkinter as ctk
 
@@ -6,6 +9,9 @@ from app.crud.user import get_user_by_username, add_user, get_all_users, block_u
 from app.database import get_db
 from app.models.user import User
 from app.services.crypto import verify_password, get_password_hash
+from app.services.license_keys import PUBLIC_KEY_PEM
+from app.services.signature import verify_hardware_fingerprint
+from app.utils.hwinfo import gather_hw_info
 from app.state_manager.user import UserState
 
 if getattr(sys, 'frozen', False):
@@ -497,6 +503,33 @@ class App(ctk.CTk):
         self.main_frame.pack(fill="both", expand=True)
 
 
+def perform_license_check():
+    import tkinter.simpledialog as sd
+    import tkinter.messagebox as mb
+
+    registry_name = sd.askstring("Проверка подписи", "Введите фамилию (имя раздела реестра):")
+    if not registry_name:
+        mb.showerror("Ошибка", "Имя раздела реестра не указано.")
+        sys.exit()
+
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, fr"Software\{registry_name}") as reg_key:
+            signature, _ = winreg.QueryValueEx(reg_key, "Signature")
+    except FileNotFoundError:
+        mb.showerror("Ошибка", f"Ветка Software\\{registry_name} или значение Signature не найдены.")
+        sys.exit()
+    except OSError as exc:
+        mb.showerror("Ошибка", f"Не удалось прочитать реестр: {exc}")
+        sys.exit()
+
+    program_path = Path(sys.executable if getattr(sys, "frozen", False) else __file__)
+    hw_info = gather_hw_info(program_path)
+
+    if not verify_hardware_fingerprint(PUBLIC_KEY_PEM, hw_info, signature):
+        mb.showerror("Ошибка", "Проверка подписи не пройдена.")
+        sys.exit()
+
+
 if __name__ == "__main__":
     import tkinter.simpledialog as sd
     import tkinter.messagebox as mb
@@ -506,6 +539,12 @@ if __name__ == "__main__":
 
     root = ctk.CTk()
     root.withdraw()
+
+    if os.name != "nt":
+        mb.showerror("Ошибка", "Проверка подписи доступна только на Windows.")
+        sys.exit()
+
+    perform_license_check()
     passphrase = sd.askstring("Парольная фраза", "Введите пароль:", show="*")
     if not passphrase:
         mb.showerror("Ошибка", "Пароль не введён!")
@@ -529,4 +568,3 @@ if __name__ == "__main__":
 
     app.protocol("WM_DELETE_WINDOW", on_close)
     app.mainloop()
-

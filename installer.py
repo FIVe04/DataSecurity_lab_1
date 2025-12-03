@@ -16,7 +16,22 @@ if getattr(sys, "frozen", False):
 else:
     RUN_DIR = Path(__file__).resolve().parent
 
-DEFAULT_EXE = RUN_DIR / "main.exe"
+
+def locate_source_exe() -> Path:
+    candidates = []
+    if getattr(sys, "frozen", False):
+        meipass = Path(getattr(sys, "_MEIPASS", RUN_DIR))
+        candidates.append(meipass / "payload" / "main.exe")
+        candidates.append(meipass / "main.exe")
+
+    candidates.append(RUN_DIR / "main.exe")
+    candidates.append(RUN_DIR / "dist" / "main.exe")
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    raise FileNotFoundError("Не удалось найти main.exe. Убедитесь, что он добавлен как ресурс.")
 
 
 class InstallerApp(tk.Tk):
@@ -26,7 +41,13 @@ class InstallerApp(tk.Tk):
         self.geometry("480x240")
         self.resizable(False, False)
 
-        self.folder_var = tk.StringVar(value=str(DEFAULT_EXE.parent))
+        try:
+            self.source_exe = locate_source_exe()
+        except FileNotFoundError:
+            self.source_exe = None
+
+        default_install = Path.home() / "Lab6App"
+        self.folder_var = tk.StringVar(value=str(default_install))
         self.registry_var = tk.StringVar()
         self.program_var = tk.StringVar(value="main.exe")
 
@@ -70,10 +91,14 @@ class InstallerApp(tk.Tk):
         if not program_name.lower().endswith(".exe"):
             program_name = f"{program_name}.exe"
 
-        source_exe = DEFAULT_EXE
-        if not source_exe.exists():
-            messagebox.showerror("Ошибка", f"Не найден исполняемый файл: {source_exe}")
-            return
+        source_exe = self.source_exe
+        if source_exe is None or not source_exe.exists():
+            try:
+                source_exe = locate_source_exe()
+                self.source_exe = source_exe
+            except FileNotFoundError as exc:
+                messagebox.showerror("Ошибка", str(exc))
+                return
 
         target_folder.mkdir(parents=True, exist_ok=True)
         destination = target_folder / program_name

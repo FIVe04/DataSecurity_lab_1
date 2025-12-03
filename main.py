@@ -10,7 +10,7 @@ from app.database import get_db
 from app.models.user import User
 from app.services.crypto import verify_password, get_password_hash
 from app.services.signature import verify_hardware_fingerprint
-from app.utils.hwinfo import gather_hw_info
+from app.utils.hwinfo import gather_hw_info, dump_hw_info
 from app.state_manager.user import UserState
 
 if getattr(sys, 'frozen', False):
@@ -523,6 +523,7 @@ def perform_license_check():
 
     program_path = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve()
     hw_info = gather_hw_info(program_path)
+    dump_hw_info(hw_info, program_path.parent / "main_hwinfo.txt")
 
     public_key_path = program_path.parent / "public_key.pem"
     if not public_key_path.exists():

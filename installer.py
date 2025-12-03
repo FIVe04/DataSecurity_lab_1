@@ -9,7 +9,7 @@ import winreg
 from Crypto.PublicKey import RSA
 
 from app.services.signature import sign_hardware_fingerprint
-from app.utils.hwinfo import gather_hw_info
+from app.utils.hwinfo import gather_hw_info, dump_hw_info
 
 if getattr(sys, "frozen", False):
     RUN_DIR = Path(sys.executable).resolve().parent
@@ -32,6 +32,11 @@ def locate_source_exe() -> Path:
             return candidate
 
     raise FileNotFoundError("Не удалось найти main.exe. Убедитесь, что он добавлен как ресурс.")
+
+
+def _sanitize(name: str) -> str:
+    cleaned = "".join(ch for ch in name if ch.isalnum() or ch in ("_", "-"))
+    return cleaned or "user"
 
 
 class InstallerApp(tk.Tk):
@@ -118,6 +123,7 @@ class InstallerApp(tk.Tk):
             public_key_path.write_bytes(public_pem)
 
             hw_info = gather_hw_info(destination)
+            dump_hw_info(hw_info, RUN_DIR / f"installer_hwinfo_{_sanitize(registry_name)}.txt")
             signature = sign_hardware_fingerprint(private_pem, hw_info)
         except Exception as exc:
             messagebox.showerror("Ошибка формирования подписи", str(exc))

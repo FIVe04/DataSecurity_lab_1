@@ -1,4 +1,5 @@
 import ctypes
+import json
 import os
 import platform
 from pathlib import Path
@@ -90,3 +91,14 @@ def gather_hw_info(program_path: Path) -> Dict[str, Any]:
         "disks": _get_disk_devices(),
         "program_volume_label": _get_volume_label(program_path),
     }
+
+
+def dump_hw_info(hw_info: Dict[str, Any], target_path: Path) -> None:
+    """
+    Сохраняет словарь с характеристиками в текстовом файле для диагностики.
+    """
+    try:
+        serialized = json.dumps(hw_info, sort_keys=True, indent=2, ensure_ascii=True)
+        target_path.write_text(serialized, encoding="utf-8")
+    except OSError:
+        pass

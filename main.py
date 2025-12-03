@@ -9,7 +9,6 @@ from app.crud.user import get_user_by_username, add_user, get_all_users, block_u
 from app.database import get_db
 from app.models.user import User
 from app.services.crypto import verify_password, get_password_hash
-from app.services.license_keys import PUBLIC_KEY_PEM
 from app.services.signature import verify_hardware_fingerprint
 from app.utils.hwinfo import gather_hw_info
 from app.state_manager.user import UserState
@@ -522,10 +521,21 @@ def perform_license_check():
         mb.showerror("Ошибка", f"Не удалось прочитать реестр: {exc}")
         sys.exit()
 
-    program_path = Path(sys.executable if getattr(sys, "frozen", False) else __file__)
+    program_path = Path(sys.executable if getattr(sys, "frozen", False) else __file__).resolve()
     hw_info = gather_hw_info(program_path)
 
-    if not verify_hardware_fingerprint(PUBLIC_KEY_PEM, hw_info, signature):
+    public_key_path = program_path.parent / "public_key.pem"
+    if not public_key_path.exists():
+        mb.showerror("Ошибка", f"Не найден публичный ключ: {public_key_path}")
+        sys.exit()
+
+    try:
+        public_key_pem = public_key_path.read_bytes()
+    except OSError as exc:
+        mb.showerror("Ошибка", f"Не удалось прочитать публичный ключ: {exc}")
+        sys.exit()
+
+    if not verify_hardware_fingerprint(public_key_pem, hw_info, signature):
         mb.showerror("Ошибка", "Проверка подписи не пройдена.")
         sys.exit()
 

@@ -6,13 +6,17 @@ from pathlib import Path
 from tkinter import filedialog, messagebox
 
 import winreg
+from Crypto.PublicKey import RSA
 
-from app.services.license_keys import PRIVATE_KEY_PEM
 from app.services.signature import sign_hardware_fingerprint
 from app.utils.hwinfo import gather_hw_info
 
-BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_EXE = BASE_DIR / "main.exe"
+if getattr(sys, "frozen", False):
+    RUN_DIR = Path(sys.executable).resolve().parent
+else:
+    RUN_DIR = Path(__file__).resolve().parent
+
+DEFAULT_EXE = RUN_DIR / "main.exe"
 
 
 class InstallerApp(tk.Tk):
@@ -81,8 +85,15 @@ class InstallerApp(tk.Tk):
             return
 
         try:
+            keys = RSA.generate(2048)
+            private_pem = keys.export_key("PEM")
+            public_pem = keys.publickey().export_key("PEM")
+
+            public_key_path = destination.parent / "public_key.pem"
+            public_key_path.write_bytes(public_pem)
+
             hw_info = gather_hw_info(destination)
-            signature = sign_hardware_fingerprint(PRIVATE_KEY_PEM, hw_info)
+            signature = sign_hardware_fingerprint(private_pem, hw_info)
         except Exception as exc:
             messagebox.showerror("Ошибка формирования подписи", str(exc))
             destination.unlink(missing_ok=True)
